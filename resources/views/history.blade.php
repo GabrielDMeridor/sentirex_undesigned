@@ -2,7 +2,7 @@
 <html>
 <head>
     <a href="{{ route('home') }}">Home</a> |
-    <a href="{{ route('analyze') }}">Analyze Sentiments</a> |
+    <a href="{{ route('analyze') }}">Analyze Sentiments</a> 
     <title>Sentiment History</title>
 
     <!-- Include jQuery from CDN (or you can download it locally) -->
