@@ -40,23 +40,23 @@
         <p><strong>Negative Words Found:</strong> <span id="negativeMatches"></span></p>
         <p><strong>Overall Sentiment:</strong> <span id="sentimentResult"></span></p>
         <p><strong>Emotion:</strong> <span id="sentimentEmotion"></span></p>
+        <p><strong>Text Features:</strong> <span id="textFeatures"></span></p>
     </div>
 
     <script>
         $(document).on('submit', '#analyzeForm', function(e) {
-            e.preventDefault(); // Prevent default form submission
+            e.preventDefault();
 
             const formData = {
                 sentiment_input: $('#sentiment_input').val(),
-                _token: '{{ csrf_token() }}' // Include CSRF token
+                _token: '{{ csrf_token() }}'
             };
 
             $.ajax({
-                url: '{{ route("store") }}', // Laravel route for sentiment analysis
+                url: '{{ route("store") }}',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
-                    // Update the results section with response data
                     $('#inputText').text(response.sentiment_input);
                     $('#positiveCount').text(response.positive_count);
                     $('#negativeCount').text(response.negative_count);
@@ -64,16 +64,14 @@
                     $('#negativeMatches').text(response.negative_matches.join(', '));
                     $('#sentimentResult').text(response.sentiment_result);
                     $('#sentimentEmotion').text(response.sentiment_emotion);
+                    $('#textFeatures').text(response.text_features);
 
-                    // Show the results section
                     $('#analysisResults').show();
-
-                    // Show success message
                     $('#successMessage')
                         .text('Input has been successfully analyzed.')
                         .fadeIn()
-                        .delay(800) // Show for 2 seconds
-                        .fadeOut(); // Then fade out
+                        .delay(800)
+                        .fadeOut();
                 },
                 error: function(xhr) {
                     alert('An error occurred while analyzing the text.');

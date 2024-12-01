@@ -14,6 +14,7 @@ class Sentiment extends Model
         'sentiment_input',
         'sentiment_result',
         'sentiment_emotion',
+        'text_features',
         'sentiment_date',
     ];
 }
