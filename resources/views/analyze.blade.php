@@ -41,8 +41,8 @@
     <div id="analysisResults" style="display: none; margin-top: 20px;">
         <h2>Analysis Results:</h2>
         <p><strong>Input Text:</strong> <span id="inputText"></span></p>
-        <p><strong>Positive Words Count:</strong> <span id="positiveCount"></span></p>
-        <p><strong>Negative Words Count:</strong> <span id="negativeCount"></span></p>
+        <p><strong>Positive Count:</strong> <span id="positiveCount"></span></p>
+        <p><strong>Negative Count:</strong> <span id="negativeCount"></span></p>
         <p><strong>Positive Words Found:</strong> <span id="positiveMatches"></span></p>
         <p><strong>Negative Words Found:</strong> <span id="negativeMatches"></span></p>
         <p><strong>Overall Sentiment:</strong> <span id="sentimentResult"></span></p>
