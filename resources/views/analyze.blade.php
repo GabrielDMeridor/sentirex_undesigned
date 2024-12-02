@@ -13,6 +13,10 @@
             border: 1px solid #c3e6cb;
             border-radius: 5px;
         }
+
+        #highlightedTextSection {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -43,6 +47,12 @@
         <p><strong>Text Features:</strong> <span id="textFeatures"></span></p>
     </div>
 
+    <!-- Highlighted Text Section -->
+    <div id="highlightedTextSection" style="margin-top: 20px;">
+        <h2>Highlighted Text:</h2>
+        <p id="highlightedText" style="white-space: pre-wrap; background-color: #f9f9f9; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></p>
+    </div>
+
     <script>
         $(document).on('submit', '#analyzeForm', function(e) {
             e.preventDefault();
@@ -65,6 +75,24 @@
                     $('#sentimentResult').text(response.sentiment_result);
                     $('#sentimentEmotion').text(response.sentiment_emotion);
                     $('#textFeatures').text(response.text_features);
+
+                    // Highlight positive and negative words
+                    let text = response.sentiment_input;
+                    let positiveWords = response.positive_matches;
+                    let negativeWords = response.negative_matches;
+
+                    let highlightedText = text.split(/\b/).map(word => {
+                        let cleanWord = word.trim().toLowerCase();
+                        if (positiveWords.includes(cleanWord)) {
+                            return `<span style="background-color: #d4edda; color: #155724;">${word}</span>`;
+                        } else if (negativeWords.includes(cleanWord)) {
+                            return `<span style="background-color: #f8d7da; color: #721c24;">${word}</span>`;
+                        }
+                        return word;
+                    }).join('');
+
+                    $('#highlightedText').html(highlightedText);
+                    $('#highlightedTextSection').show();
 
                     $('#analysisResults').show();
                     $('#successMessage')
