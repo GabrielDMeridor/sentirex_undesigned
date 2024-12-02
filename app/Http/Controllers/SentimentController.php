@@ -146,7 +146,7 @@ class SentimentController extends Controller
             'text_features' => implode('; ', $textFeatures),
         ]);
     }
-    
+
     public function history()
     {
         $sentiments = Sentiment::whereNull('deleted_at')->get();
@@ -164,20 +164,25 @@ class SentimentController extends Controller
         ]);
     }
 
-    public function generateReport($id)
-    {
-        $sentiment = Sentiment::findOrFail($id);
+public function generateReport(Request $request, $id)
+{
+    $sentiment = Sentiment::findOrFail($id);
 
-        $data = [
-            'input' => $sentiment->sentiment_input,
-            'result' => $sentiment->sentiment_result,
-            'emotion' => $sentiment->sentiment_emotion,
-            'text_features' => $sentiment->text_features,
-            'date' => $sentiment->sentiment_date,
-        ];
+    $data = [
+        'input' => $sentiment->sentiment_input,
+        'result' => $sentiment->sentiment_result,
+        'emotion' => $sentiment->sentiment_emotion,
+        'text_features' => $sentiment->text_features,
+        'date' => $sentiment->sentiment_date,
+    ];
 
-        $pdf = Pdf::loadView('report', $data);
-        $filename = "sentiment_report_{$sentiment->id}.pdf";
-        return $pdf->download($filename);
+    if ($request->has('preview') && $request->preview) {
+        return view('report', $data)->render(); 
     }
+
+    $pdf = Pdf::loadView('report', $data);
+    $filename = "sentiment_report_{$sentiment->id}.pdf";
+    return $pdf->download($filename);
+}
+
 }

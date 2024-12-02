@@ -7,7 +7,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Ensures the table has a fixed layout */
+            table-layout: fixed; /* Fixed table layout */
         }
 
         th, td {
@@ -21,15 +21,14 @@
             background-color: #f2f2f2;
         }
 
-        /* For scrollable cells */
         td {
-            max-height: 100px; /* Set a maximum height */
-            overflow: auto; /* Enable scroll for overflowing content */
-            word-wrap: break-word; /* Break words for long unbroken text */
+            max-height: 100px;
+            overflow: auto;
+            word-wrap: break-word;
         }
 
         td:first-child {
-            max-width: 200px; /* Set a maximum width for the Input column */
+            max-width: 200px;
         }
 
         td a {
@@ -37,7 +36,7 @@
             color: blue;
         }
 
-        .delete-btn {
+        .delete-btn, .report-btn {
             background-color: red;
             color: white;
             border: none;
@@ -46,7 +45,7 @@
             border-radius: 3px;
         }
 
-        .delete-btn:hover {
+        .delete-btn:hover, .report-btn:hover {
             background-color: darkred;
         }
 
@@ -54,6 +53,50 @@
             display: none;
             color: green;
             margin-bottom: 15px;
+        }
+
+        #reportModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            z-index: 1000;
+            width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        #modalBackdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        #downloadReport, #closeModal {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        #downloadReport {
+            background-color: green;
+            color: white;
+        }
+
+        #closeModal {
+            background-color: red;
+            color: white;
         }
     </style>
 </head>
@@ -92,16 +135,26 @@
                     </td>
                     <td>{{ $sentiment->sentiment_date }}</td>
                     <td>
-                        <button class="delete-btn" data-id="{{ $sentiment->id }}">Delete</button>
-                        <a href="{{ route('generateReport', $sentiment->id) }}" target="_blank">Generate Report</a>
-                    </td>
+    <button class="delete-btn" data-id="{{ $sentiment->id }}">Delete</button>
+    <button class="report-btn" data-id="{{ $sentiment->id }}" style="background-color: green; color: white;">Generate Report</button>
+</td>
+
                 </tr>
             @endforeach
         </tbody>
     </table>
 
+    <!-- Modal for Report -->
+    <div id="reportModal">
+        <div id="reportContent"></div>
+        <button id="downloadReport">Download PDF</button>
+        <button id="closeModal">Close</button>
+    </div>
+    <div id="modalBackdrop"></div>
+
     <script>
         $(document).ready(function () {
+            // Delete sentiment
             $('.delete-btn').click(function () {
                 const sentimentId = $(this).data('id');
                 const row = $('#row-' + sentimentId);
@@ -122,6 +175,37 @@
                         }
                     });
                 }
+            });
+
+            // Show report in modal
+            $('.report-btn').click(function () {
+                const sentimentId = $(this).data('id');
+
+                // Fetch the report content
+                $.ajax({
+                    url: "{{ route('generateReport', '') }}/" + sentimentId,
+                    type: 'GET',
+                    data: { preview: true },
+                    success: function (response) {
+                        $('#reportContent').html(response); // Load the content into the modal
+                        $('#reportModal, #modalBackdrop').show(); // Show modal and backdrop
+                        $('#downloadReport').data('id', sentimentId); // Save ID for download
+                    },
+                    error: function (xhr) {
+                        alert('Error generating report.');
+                    }
+                });
+            });
+
+            // Download report as PDF
+            $('#downloadReport').click(function () {
+                const sentimentId = $(this).data('id');
+                window.location.href = "{{ route('generateReport', '') }}/" + sentimentId; // Redirect to download
+            });
+
+            // Close the modal
+            $('#closeModal, #modalBackdrop').click(function () {
+                $('#reportModal, #modalBackdrop').hide();
             });
         });
     </script>
