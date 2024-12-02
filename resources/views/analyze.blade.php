@@ -28,11 +28,14 @@
     <div id="successMessage"></div>
 
     <!-- Sentiment Analysis Form -->
-    <form id="analyzeForm">
+    <form id="analyzeForm" enctype="multipart/form-data">
         @csrf
-        <textarea name="sentiment_input" id="sentiment_input" placeholder="Enter text to analyze" required></textarea><br>
+        <textarea name="sentiment_input" id="sentiment_input" placeholder="Enter text to analyze" ></textarea><br>
+        <label for="fileInput">Or upload a file:</label>
+        <input type="file" name="fileInput" id="fileInput" accept=".txt,.docx,.pdf"><br>
         <button type="submit">Analyze</button>
     </form>
+
 
     <!-- Results Section -->
     <div id="analysisResults" style="display: none; margin-top: 20px;">
@@ -54,58 +57,69 @@
     </div>
 
     <script>
-        $(document).on('submit', '#analyzeForm', function(e) {
-            e.preventDefault();
+    $(document).on('submit', '#analyzeForm', function (e) {
+        e.preventDefault();
 
-            const formData = {
-                sentiment_input: $('#sentiment_input').val(),
-                _token: '{{ csrf_token() }}'
-            };
+        const formData = new FormData();
+        const fileInput = $('#fileInput')[0].files[0];
 
-            $.ajax({
-                url: '{{ route("store") }}',
-                method: 'POST',
-                data: formData,
-                success: function(response) {
-                    $('#inputText').text(response.sentiment_input);
-                    $('#positiveCount').text(response.positive_count);
-                    $('#negativeCount').text(response.negative_count);
-                    $('#positiveMatches').text(response.positive_matches.join(', '));
-                    $('#negativeMatches').text(response.negative_matches.join(', '));
-                    $('#sentimentResult').text(response.sentiment_result);
-                    $('#sentimentEmotion').text(response.sentiment_emotion);
-                    $('#textFeatures').text(response.text_features);
+        formData.append('sentiment_input', $('#sentiment_input').val());
+        if (fileInput) {
+            formData.append('fileInput', fileInput);
+        }
+        formData.append('_token', '{{ csrf_token() }}');
 
-                    // Highlight positive and negative words
-                    let text = response.sentiment_input;
-                    let positiveWords = response.positive_matches;
-                    let negativeWords = response.negative_matches;
+        $.ajax({
+            url: '{{ route("store") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                $('#inputText').text(response.sentiment_input);
+                $('#positiveCount').text(response.positive_count);
+                $('#negativeCount').text(response.negative_count);
+                $('#positiveMatches').text(response.positive_matches.join(', '));
+                $('#negativeMatches').text(response.negative_matches.join(', '));
+                $('#sentimentResult').text(response.sentiment_result);
+                $('#sentimentEmotion').text(response.sentiment_emotion);
+                $('#textFeatures').text(response.text_features);
 
-                    let highlightedText = text.split(/\b/).map(word => {
-                        let cleanWord = word.trim().toLowerCase();
-                        if (positiveWords.includes(cleanWord)) {
-                            return `<span style="background-color: #d4edda; color: #155724;">${word}</span>`;
-                        } else if (negativeWords.includes(cleanWord)) {
-                            return `<span style="background-color: #f8d7da; color: #721c24;">${word}</span>`;
-                        }
-                        return word;
-                    }).join('');
+                // Highlight positive and negative words
+                let text = response.sentiment_input;
+                let positiveWords = response.positive_matches;
+                let negativeWords = response.negative_matches;
 
-                    $('#highlightedText').html(highlightedText);
-                    $('#highlightedTextSection').show();
+                let highlightedText = text.split(/\b/).map(word => {
+                    let cleanWord = word.trim().toLowerCase();
+                    if (positiveWords.includes(cleanWord)) {
+                        return `<span style="background-color: #d4edda; color: #155724;">${word}</span>`;
+                    } else if (negativeWords.includes(cleanWord)) {
+                        return `<span style="background-color: #f8d7da; color: #721c24;">${word}</span>`;
+                    }
+                    return word;
+                }).join('');
 
-                    $('#analysisResults').show();
-                    $('#successMessage')
-                        .text('Input has been successfully analyzed.')
-                        .fadeIn()
-                        .delay(800)
-                        .fadeOut();
-                },
-                error: function(xhr) {
+                $('#highlightedText').html(highlightedText);
+                $('#highlightedTextSection').show();
+
+                $('#analysisResults').show();
+                $('#successMessage')
+                    .text('Input has been successfully analyzed.')
+                    .fadeIn()
+                    .delay(800)
+                    .fadeOut();
+            },
+            error: function (xhr) {
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    alert(xhr.responseJSON.error);
+                } else {
                     alert('An error occurred while analyzing the text.');
                 }
+            }
+
+                });
             });
-        });
     </script>
 </body>
 </html>

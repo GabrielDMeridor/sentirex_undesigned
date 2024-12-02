@@ -6,6 +6,9 @@ use App\Models\Sentiment;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Sentiment\Analyzer;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\IOFactory;
+use Smalot\PdfParser\Parser;
 
 class SentimentController extends Controller
 {
@@ -21,16 +24,54 @@ class SentimentController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['sentiment_input' => 'required|string']);
+        $request->validate([
+            'sentiment_input' => 'nullable|string',
+            'fileInput' => 'nullable|file|mimes:txt,docx,pdf',
+        ]);
     
-        $text = $request->sentiment_input;
+        $text = $request->sentiment_input ?? ''; // Start with the input text or an empty string.
+    
+        // Process uploaded file if present
+        if ($request->hasFile('fileInput')) {
+            $file = $request->file('fileInput');
+            $extension = $file->getClientOriginalExtension();
+    
+            try {
+                if ($extension === 'txt') {
+                    $text .= file_get_contents($file->getRealPath());
+                } elseif ($extension === 'docx') {
+                    $phpWord = IOFactory::load($file->getRealPath());
+                    $sections = $phpWord->getSections();
+                    foreach ($sections as $section) {
+                        $elements = $section->getElements();
+                        foreach ($elements as $element) {
+                            if (method_exists($element, 'getText')) {
+                                $text .= $element->getText() . ' ';
+                            }
+                        }
+                    }
+                } elseif ($extension === 'pdf') {
+                    $parser = new Parser();
+                    $pdf = $parser->parseFile($file->getRealPath());
+                    $text .= $pdf->getText();
+                }
+            } catch (\Exception $e) {
+                \Log::error('File parsing error: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to process the uploaded file.'], 500);
+            }
+        }
+    
+        // Check if we now have valid text
+        if (empty(trim($text))) {
+            return response()->json(['error' => 'No valid text found in the input or uploaded file.'], 400);
+        }
+
         $lowercaseText = strtolower($text);
     
         // Step 1: Analyze sentiment using PHP Sentiment Analyzer
         $analyzer = new Analyzer();
         $sentimentScores = $analyzer->getSentiment($text);
     
-        // Initialize positive and negative counts from the analyzer
         $positiveCount = $sentimentScores['pos'];
         $negativeCount = $sentimentScores['neg'];
         $positiveMatches = [];
@@ -74,7 +115,7 @@ class SentimentController extends Controller
             $sentimentEmotion = 'Sad';
         }
     
-        // Step 4: Check for all-caps (adjust emotion if needed)
+        // Check for all-caps (adjust emotion if needed)
         $textFeatures = [];
         if (preg_match('/[A-Z]{2,}/', $text)) {
             $textFeatures[] = 'Contains all-caps';
@@ -106,8 +147,6 @@ class SentimentController extends Controller
         ]);
     }
     
-    
-
     public function history()
     {
         $sentiments = Sentiment::whereNull('deleted_at')->get();
