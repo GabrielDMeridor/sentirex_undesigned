@@ -7,7 +7,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Fixed table layout */
+            table-layout: fixed; 
         }
 
         th, td {
@@ -135,9 +135,9 @@
                     </td>
                     <td>{{ $sentiment->sentiment_date }}</td>
                     <td>
-    <button class="delete-btn" data-id="{{ $sentiment->id }}">Delete</button>
-    <button class="report-btn" data-id="{{ $sentiment->id }}" style="background-color: green; color: white;">Generate Report</button>
-</td>
+                        <button class="delete-btn" data-id="{{ $sentiment->id }}">Delete</button>
+                        <button class="report-btn" data-id="{{ $sentiment->id }}" style="background-color: green; color: white;">Generate Report</button>
+                    </td>
 
                 </tr>
             @endforeach
