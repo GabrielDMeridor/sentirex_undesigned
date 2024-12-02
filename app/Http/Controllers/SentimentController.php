@@ -9,6 +9,8 @@ use Sentiment\Analyzer;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser;
+use MicrosoftAzure\Storage\Blob\BlobRestProxy;
+use MicrosoftAzure\Storage\Common\Exceptions\ServiceException;
 
 class SentimentController extends Controller
 {
@@ -77,12 +79,24 @@ class SentimentController extends Controller
         $positiveMatches = [];
         $negativeMatches = [];
     
-        // Step 2: Load lexicon files for unmatched words
-        $positiveWordsPath = base_path('storage/app/lexicon/positive_words.txt');
-        $negativeWordsPath = base_path('storage/app/lexicon/negative_words.txt');
-    
-        $positiveWords = array_map('trim', explode("\n", file_get_contents($positiveWordsPath)));
-        $negativeWords = array_map('trim', explode("\n", file_get_contents($negativeWordsPath)));
+        // Initialize Azure Blob Storage Client
+        $connectionString = 'DefaultEndpointsProtocol=https;AccountName=lexiconwords;AccountKey=7pNvKXsdw2dVdaHjmJTf3eZTsWn17KYz//VsTbAr1TfmKcgz7dXqxFUmmt8gikYKBAn3w0IicF+H+AStmlXlTQ==;EndpointSuffix=core.windows.net';
+
+        $blobClient = BlobRestProxy::createBlobService($connectionString);
+
+        try {
+            // Retrieve positive words file
+            $positiveBlob = $blobClient->getBlob('lexicon', 'positive_words.txt');
+            $positiveWords = array_map('trim', explode("\n", stream_get_contents($positiveBlob->getContentStream())));
+
+            // Retrieve negative words file
+            $negativeBlob = $blobClient->getBlob('lexicon', 'negative_words.txt');
+            $negativeWords = array_map('trim', explode("\n", stream_get_contents($negativeBlob->getContentStream())));
+        } catch (ServiceException $e) {
+            \Log::error('Azure Blob Storage error: ' . $e->getCode() . ' - ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to retrieve lexicon files from Azure Blob Storage.'], 500);
+        }
+
     
         // Count words using lexicon files
         $words = preg_split('/\s+/', $lowercaseText);

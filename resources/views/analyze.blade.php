@@ -56,9 +56,10 @@
         <p id="highlightedText" style="white-space: pre-wrap; background-color: #f9f9f9; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></p>
     </div>
 
-<!-- Add a Canvas for the Pie Chart -->
-<canvas id="sentimentPieChart" style="max-width: 400px; max-height: 400px; margin: auto; display: block;"></canvas>
+    <!-- Add a Canvas for the Pie Chart -->
+    <canvas id="sentimentPieChart" style="max-width: 400px; max-height: 400px; margin: auto; display: block;"></canvas>
 
+    
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let sentimentChart = null; // Declare the chart variable globally
@@ -91,7 +92,6 @@ $(document).on('submit', '#analyzeForm', function (e) {
             $('#sentimentEmotion').text(response.sentiment_emotion);
             $('#textFeatures').text(response.text_features);
 
-            // Highlight positive and negative words
             let text = response.sentiment_input;
             let positiveWords = response.positive_matches;
             let negativeWords = response.negative_matches;
@@ -116,18 +116,15 @@ $(document).on('submit', '#analyzeForm', function (e) {
                 .delay(800)
                 .fadeOut();
 
-            // Update results
             const total = response.positive_count + response.negative_count + 1;
             const neutralCount = Math.max(0, total - response.positive_count - response.negative_count);
 
             const ctx = document.getElementById('sentimentPieChart').getContext('2d');
 
-            // Destroy existing chart instance if it exists
             if (sentimentChart) {
                 sentimentChart.destroy();
             }
 
-            // Create a new chart instance
             sentimentChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
