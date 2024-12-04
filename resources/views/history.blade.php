@@ -1,213 +1,103 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Sentiment History</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed; 
-        }
+@extends('layouts.app')
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        td {
-            max-height: 100px;
-            overflow: auto;
-            word-wrap: break-word;
-        }
-
-        td:first-child {
-            max-width: 200px;
-        }
-
-        td a {
-            text-decoration: none;
-            color: blue;
-        }
-
-        .delete-btn, .report-btn {
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-
-        .delete-btn:hover, .report-btn:hover {
-            background-color: darkred;
-        }
-
-        #success-message {
-            display: none;
-            color: green;
-            margin-bottom: 15px;
-        }
-
-        #reportModal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 1px solid #ccc;
-            padding: 20px;
-            z-index: 1000;
-            width: 80%;
-            max-height: 80%;
-            overflow-y: auto;
-        }
-
-        #modalBackdrop {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-
-        #downloadReport, #closeModal {
-            margin-top: 10px;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-
-        #downloadReport {
-            background-color: green;
-            color: white;
-        }
-
-        #closeModal {
-            background-color: red;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <a href="{{ route('home') }}">Home</a> |
-    <a href="{{ route('analyze') }}">Analyze Sentiments</a>
-    <h1>Sentiment Analysis History</h1>
-
-    <div id="success-message"></div>
-
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 25%;">Input</th>
-                <th style="width: 10%;">Result</th>
-                <th style="width: 10%;">Emotion</th>
-                <th style="width: 20%;">Text Features</th>
-                <th style="width: 15%;">Date</th>
-                <th style="width: 20%;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($sentiments as $sentiment)
-                <tr id="row-{{ $sentiment->id }}">
-                    <td title="{{ $sentiment->sentiment_input }}">
-                        <div style="max-height: 100px; overflow: auto;">
-                            {{ $sentiment->sentiment_input }}
-                        </div>
-                    </td>
-                    <td>{{ $sentiment->sentiment_result }}</td>
-                    <td>{{ $sentiment->sentiment_emotion }}</td>
-                    <td>
-                        <div style="max-height: 100px; overflow: auto;">
-                            {{ $sentiment->text_features }}
-                        </div>
-                    </td>
-                    <td>{{ $sentiment->sentiment_date }}</td>
-                    <td>
-                        <button class="delete-btn" data-id="{{ $sentiment->id }}">Delete</button>
-                        <button class="report-btn" data-id="{{ $sentiment->id }}" style="background-color: green; color: white;">Generate Report</button>
-                    </td>
-
+@section('content')
+<div class="p-6">
+    <div class="overflow-x-auto">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Input</th>
+                    <th>Result</th>
+                    <th>Emotion</th>
+                    <th>Features</th>
+                    <th>Date</th>
+                    <th>Actions</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <!-- Modal for Report -->
-    <div id="reportModal">
-        <div id="reportContent"></div>
-        <button id="downloadReport">Download PDF</button>
-        <button id="closeModal">Close</button>
+            </thead>
+            <tbody>
+                @foreach ($sentiments as $sentiment)
+                <tr>
+                    <td>{{ Str::limit($sentiment->sentiment_input, 50) }}</td>
+                    <td>
+                        <span class="badge badge-{{ $sentiment->sentiment_result === 'Positive' ? 'success' : ($sentiment->sentiment_result === 'Negative' ? 'error' : 'info') }}">
+                            {{ $sentiment->sentiment_result }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex items-center">
+                            {{ $sentiment->sentiment_emotion }}
+                            <span class="ml-2">
+                                {{ $sentiment->sentiment_emotion === 'Happy' ? '😊' : ($sentiment->sentiment_emotion === 'Sad' ? '😢' : '😐') }}
+                            </span>
+                        </span>
+                    </td>
+                    <td>{{ Str::limit($sentiment->text_features, 30) }}</td>
+                    <td>{{ $sentiment->created_at->diffForHumans() }}</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <button onclick="showReport({{ $sentiment->id }})" class="btn btn-ghost btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </button>
+                            <form action="{{ route('softDelete', $sentiment->id) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-ghost btn-sm text-error">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-    <div id="modalBackdrop"></div>
+</div>
 
-    <script>
-        $(document).ready(function () {
-            // Delete sentiment
-            $('.delete-btn').click(function () {
-                const sentimentId = $(this).data('id');
-                const row = $('#row-' + sentimentId);
+<!-- Report Modal -->
+<dialog id="reportModal" class="modal">
+    <div class="modal-box max-w-4xl">
+        <h3 class="font-bold text-lg mb-4">Sentiment Analysis Report</h3>
+        <div id="reportContent"></div>
+        <div class="modal-action">
+            <button onclick="downloadReport()" class="btn btn-primary">Download PDF</button>
+            <form method="dialog">
+                <button class="btn">Close</button>
+            </form>
+        </div>
+    </div>
+</dialog>
 
-                if (confirm('Are you sure you want to delete this sentiment?')) {
-                    $.ajax({
-                        url: "{{ route('softDelete', '') }}/" + sentimentId,
-                        type: 'POST',
-                        data: { _token: '{{ csrf_token() }}' },
-                        success: function (response) {
-                            $('#success-message').text(response.message).fadeIn().delay(800).fadeOut();
-                            row.fadeOut(0, function () {
-                                $(this).remove();
-                            });
-                        },
-                        error: function (xhr) {
-                            alert('Error deleting sentiment: ' + xhr.responseJSON.message);
-                        }
-                    });
-                }
-            });
+@push('scripts')
+<script>
+let currentReportId = null;
 
-            // Show report in modal
-            $('.report-btn').click(function () {
-                const sentimentId = $(this).data('id');
+function showReport(id) {
+    currentReportId = id;
+    const modal = document.getElementById('reportModal');
+    const reportContent = document.getElementById('reportContent');
+    
+    reportContent.innerHTML = '<div class="flex justify-center p-4"><span class="loading loading-spinner loading-lg"></span></div>';
+    modal.showModal();
 
-                // Fetch the report content
-                $.ajax({
-                    url: "{{ route('generateReport', '') }}/" + sentimentId,
-                    type: 'GET',
-                    data: { preview: true },
-                    success: function (response) {
-                        $('#reportContent').html(response); // Load the content into the modal
-                        $('#reportModal, #modalBackdrop').show(); // Show modal and backdrop
-                        $('#downloadReport').data('id', sentimentId); // Save ID for download
-                    },
-                    error: function (xhr) {
-                        alert('Error generating report.');
-                    }
-                });
-            });
-
-            // Download report as PDF
-            $('#downloadReport').click(function () {
-                const sentimentId = $(this).data('id');
-                window.location.href = "{{ route('generateReport', '') }}/" + sentimentId; // Redirect to download
-            });
-
-            // Close the modal
-            $('#closeModal, #modalBackdrop').click(function () {
-                $('#reportModal, #modalBackdrop').hide();
-            });
+    fetch(`/report/${id}`)
+        .then(response => response.text())
+        .then(html => {
+            reportContent.innerHTML = html;
+        })
+        .catch(error => {
+            reportContent.innerHTML = '<div class="alert alert-error">Failed to load report</div>';
         });
-    </script>
-</body>
-</html>
+}
+
+function downloadReport() {
+    if (currentReportId) {
+        window.location.href = `/report/${currentReportId}/download`;
+    }
+}
+</script>
+@endpush
+@endsection
