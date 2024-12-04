@@ -9,6 +9,9 @@
             line-height: 1.6;
             margin: 0;
             padding: 20px;
+            background-color: #f9fafb; /* Light background for better readability */
+            color: #1f2937; /* Darker font color for better contrast */
+            font-size: 16px; /* Base font size increased slightly */
         }
         .header {
             text-align: center;
@@ -18,12 +21,20 @@
             color: white;
             border-radius: 10px;
         }
+        .header h1 {
+            font-size: 2.5em; /* Larger font size for the header title */
+            margin: 0;
+        }
+        .header p {
+            font-size: 1em; /* Maintain readable size for the subtitle */
+        }
         .content {
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 10px;
             margin: 20px 0;
-            background: #fff;
+            background: #fff; /* Ensure white background for content */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
         }
         .section {
             margin-bottom: 20px;
@@ -33,10 +44,12 @@
         .label {
             font-weight: bold;
             color: #374151;
+            font-size: 1.1em;
         }
         .value {
             margin-left: 10px;
             color: #1f2937;
+            font-size: 1em;
         }
         .stats {
             display: flex;
