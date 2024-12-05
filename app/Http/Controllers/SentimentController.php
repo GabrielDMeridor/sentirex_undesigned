@@ -13,6 +13,7 @@ use MicrosoftAzure\Storage\Blob\BlobRestProxy;
 use MicrosoftAzure\Storage\Common\Exceptions\ServiceException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 
 class SentimentController extends Controller
 {
@@ -25,6 +26,39 @@ class SentimentController extends Controller
     }
 
     private function getDashboardStats()
+{
+    $today = Carbon::today();
+    $totalAnalysis = Sentiment::whereDate('created_at', $today)->count();
+    
+    $positiveCount = Sentiment::whereDate('created_at', $today)
+        ->where('sentiment_result', 'Positive')
+        ->count();
+    
+    $positiveRate = $totalAnalysis > 0 
+        ? round(($positiveCount / $totalAnalysis) * 100, 1) 
+        : 0;
+
+    // Get last 7 days sentiment trends
+    $lastWeek = Carbon::now()->subDays(7);
+    $sentimentTrends = Sentiment::where('created_at', '>=', $lastWeek)
+        ->selectRaw('DATE(created_at) as date')
+        ->selectRaw('COUNT(CASE WHEN sentiment_result = "Positive" THEN 1 END) as positive_count')
+        ->selectRaw('COUNT(CASE WHEN sentiment_result = "Negative" THEN 1 END) as negative_count')
+        ->selectRaw('COUNT(CASE WHEN sentiment_result = "Neutral" THEN 1 END) as neutral_count')
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+    return [
+        'total_analysis' => $totalAnalysis,
+        'positive_rate' => $positiveRate,
+        'accuracy' => 99,
+        'recent_analyses' => Sentiment::latest()->take(5)->get(),
+        'sentiment_trends' => $sentimentTrends
+    ];
+}
+
+    public function __construct()
     {
         $today = Carbon::today();
         $totalAnalysis = Sentiment::whereDate('created_at', $today)->count();
@@ -37,12 +71,10 @@ class SentimentController extends Controller
             ? round(($positiveCount / $totalAnalysis) * 100, 1) 
             : 0;
 
-        return [
-            'total_analysis' => $totalAnalysis,
-            'positive_rate' => $positiveRate,
-            'accuracy' => 99,
-            'recent_analyses' => Sentiment::latest()->take(5)->get()
-        ];
+        View::share('todayStats', [
+            'count' => $totalAnalysis,
+            'positive_rate' => $positiveRate . '%'
+        ]);
     }
 
     public function create()

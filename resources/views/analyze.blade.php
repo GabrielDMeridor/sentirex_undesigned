@@ -186,7 +186,7 @@
                 <!-- Word Cloud -->
                 <div class="bg-base-100 rounded-lg p-4 mt-6">
                     <h3 class="font-medium mb-4">Key Terms</h3>
-                    <div id="wordCloud" class="h-48"></div>
+                    <div id="wordCloud" class="h-48 w-full flex items-center justify-center"></div>
                 </div>
 
                 <!-- Export Options -->
@@ -480,28 +480,25 @@ $('#removeFile').click(function() {
 
     function updateStats(response) {
         const total = response.positive_count + response.negative_count + 1;
-        const positivePercent = ((response.positive_count / total) * 100).toFixed(1);
-        const negativePercent = ((response.negative_count / total) * 100).toFixed(1);
-        const neutralPercent = (100 - positivePercent - negativePercent).toFixed(1);
+        const positivePercent = ((response.positive_count / total) * 100).toFixed(1) + '%';
+        const negativePercent = ((response.negative_count / total) * 100).toFixed(1) + '%';
+        const neutralPercent = (100 - parseFloat(positivePercent) - parseFloat(negativePercent)).toFixed(1) + '%';
         
         // Animate percentages
         gsap.to('#positiveCount', {
             innerText: positivePercent,
             duration: 1,
-            snap: { innerText: 1 },
-            suffix: '%'
+            snap: { innerText: 1 }
         });
         gsap.to('#negativeCount', {
             innerText: negativePercent,
             duration: 1,
-            snap: { innerText: 1 },
-            suffix: '%'
+            snap: { innerText: 1 }
         });
         gsap.to('#neutralCount', {
             innerText: neutralPercent,
             duration: 1,
-            snap: { innerText: 1 },
-            suffix: '%'
+            snap: { innerText: 1 }
         });
     }
 
@@ -539,62 +536,117 @@ $('#removeFile').click(function() {
     });
 }
 
-    function updateCharts(response) {
-        const total = response.positive_count + response.negative_count + 1;
-        const positivePercent = ((response.positive_count / total) * 100).toFixed(1);
-        const negativePercent = ((response.negative_count / total) * 100).toFixed(1);
-        const neutralPercent = (100 - positivePercent - negativePercent).toFixed(1);
+function updateCharts(response) {
+   // Pie chart code remains the same
+   const total = response.positive_count + response.negative_count + 1;
+   const positivePercent = ((response.positive_count / total) * 100).toFixed(1);
+   const negativePercent = ((response.negative_count / total) * 100).toFixed(1);
+   const neutralPercent = (100 - positivePercent - negativePercent).toFixed(1);
 
-        // Update pie chart
-        if (sentimentChart) {
-            sentimentChart.destroy();
-        }
+   if (sentimentChart) {
+       sentimentChart.destroy();
+   }
 
-        const ctx = document.getElementById('sentimentPieChart').getContext('2d');
-        sentimentChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Positive', 'Negative', 'Neutral'],
-                datasets: [{
-                    data: [positivePercent, negativePercent, neutralPercent],
-                    backgroundColor: [
-                        '#10B981', // success
-                        '#EF4444', // error
-                        '#6B7280'  // neutral
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                family: "'Plus Jakarta Sans', sans-serif",
-                                size: 12
-                            },
-                            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#e5e7eb' : '#374151'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                return `${tooltipItem.label}: ${tooltipItem.raw}%`;
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true
-                }
-            }
-        });
-    }
+   const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+   sentimentChart = new Chart(ctx, {
+       type: 'doughnut',
+       data: {
+           labels: ['Positive', 'Negative', 'Neutral'],
+           datasets: [{
+               data: [positivePercent, negativePercent, neutralPercent],
+               backgroundColor: [
+                   '#10B981', // success
+                   '#EF4444', // error
+                   '#6B7280'  // neutral
+               ],
+               borderWidth: 0
+           }]
+       },
+       options: {
+           responsive: true,
+           maintainAspectRatio: false,
+           cutout: '70%',
+           plugins: {
+               legend: {
+                   position: 'top',
+                   labels: {
+                       font: {
+                           family: "'Plus Jakarta Sans', sans-serif",
+                           size: 12
+                       },
+                       color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#e5e7eb' : '#374151'
+                   }
+               },
+               tooltip: {
+                   callbacks: {
+                       label: function(tooltipItem) {
+                           return `${tooltipItem.label}: ${tooltipItem.raw}%`;
+                       }
+                   }
+               }
+           },
+           animation: {
+               animateScale: true,
+               animateRotate: true
+           }
+       }
+   });
+
+   // Word cloud code
+   const wordCloudDiv = document.getElementById('wordCloud');
+   d3.select(wordCloudDiv).selectAll("*").remove();
+
+   const words = response.sentiment_input.toLowerCase()
+       .split(/\s+/)
+       .filter(word => word.length > 3)
+       .reduce((acc, word) => {
+           word = word.replace(/[.,!?]/g, '');
+           acc[word] = (acc[word] || 0) + 1;
+           return acc;
+       }, {});
+
+   const wordCloudData = Object.entries(words)
+       .filter(([word]) => word.length > 0)
+       .map(([text, value]) => ({
+           text,
+           size: Math.min(50, value * 20),
+           color: response.positive_matches.includes(text) ? '#10B981' : 
+                  response.negative_matches.includes(text) ? '#EF4444' : '#6B7280'
+       }))
+       .sort((a, b) => b.size - a.size)
+       .slice(0, 20);
+
+   const width = wordCloudDiv.offsetWidth;
+   const height = wordCloudDiv.offsetHeight;
+
+   if (wordCloudData.length > 0) {
+       d3.layout.cloud()
+           .size([width, height])
+           .words(wordCloudData)
+           .padding(5)
+           .rotate(() => 0)
+           .fontSize(d => d.size)
+           .on("end", words => {
+               const svg = d3.select(wordCloudDiv)
+                   .append("svg")
+                   .attr("width", width)
+                   .attr("height", height);
+
+               svg.append("g")
+                   .attr("transform", `translate(${width/2},${height/2})`)
+                   .selectAll("text")
+                   .data(words)
+                   .enter()
+                   .append("text")
+                   .style("font-size", d => `${d.size}px`)
+                   .style("fill", d => d.color)
+                   .attr("text-anchor", "middle")
+                   .attr("transform", d => `translate(${d.x},${d.y})`)
+                   .text(d => d.text);
+           })
+           .start();
+   }
+}
 
     // Export functionality
     $('#copyResults').click(function() {

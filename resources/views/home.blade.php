@@ -188,14 +188,23 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize sentiment trend chart
+    const sentimentTrends = @json($sentiment_trends);
+    
+    const dates = sentimentTrends.map(trend => new Date(trend.date).toLocaleDateString());
+    const positiveData = sentimentTrends.map(trend => trend.positive_count);
+    const negativeData = sentimentTrends.map(trend => trend.negative_count);
+    const neutralData = sentimentTrends.map(trend => trend.neutral_count);
+
     const options = {
         series: [{
             name: 'Positive',
-            data: [65, 72, 58, 80, 75, 82, 77]
+            data: positiveData
         }, {
             name: 'Negative',
-            data: [35, 28, 42, 20, 25, 18, 23]
+            data: negativeData
+        }, {
+            name: 'Neutral',
+            data: neutralData
         }],
         chart: {
             type: 'area',
@@ -213,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             width: 2
         },
         xaxis: {
-            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            categories: dates,
             labels: {
                 style: {
                     colors: '#666'
@@ -227,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         },
-        colors: ['#10b981', '#ef4444'],
+        colors: ['#10b981', '#ef4444', '#6B7280'],
         fill: {
             type: 'gradient',
             gradient: {
@@ -250,6 +259,9 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: {
                 colors: '#666'
             }
+        },
+        theme: {
+            mode: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
         }
     };
 
