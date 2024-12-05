@@ -253,12 +253,7 @@
                     </div>
 
                     <!-- Help Section -->
-                    <div class="absolute bottom-0 left-0 right-0 p-4">
-                        <div class="bg-primary/10 rounded-xl p-4">
-                            <h3 class="font-semibold mb-2">Need Help?</h3>
-                            <p class="text-sm opacity-70 mb-4">Check our documentation for detailed guides and examples.</p>
-                            <a href="#" class="btn btn-primary btn-sm w-full">View Documentation</a>
-                        </div>
+                    
                     </div>
                 </div>
             </div>
