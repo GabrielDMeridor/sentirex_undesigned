@@ -194,7 +194,7 @@
                         </div>
                         <div>
                             <h2 class="text-xl font-bold gradient-text">Sentirex</h2>
-                            <p class="text-sm opacity-70">AI-Powered Analysis</p>
+                            <p class="text-sm opacity-70">Text Analysis</p>
                         </div>
                     </div>
 

@@ -15,7 +15,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        AI-Powered
+                        Sentirex
                     </div>
                 </div>
                 
@@ -235,41 +235,87 @@ $(document).ready(function() {
     });
 
     function handleFileSelect(file) {
-        if (file) {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Too Large',
-                    text: 'Please select a file under 10MB.',
-                    background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1f2937' : '#ffffff'
-                });
-                return;
-            }
-
-            gsap.to('#filePreview', {
-                height: 'auto',
-                duration: 0.3,
-                autoAlpha: 1,
-                onComplete: () => {
-                    $('#fileName').text(file.name);
-                    $('#sentiment_input').attr('disabled', true);
-                }
+    if (file) {
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            Swal.fire({
+                icon: 'error',
+                title: 'File Too Large',
+                text: 'Please select a file under 10MB.',
+                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1f2937' : '#ffffff',
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#ffffff' : '#000000' // Explicit text color
             });
+            return;
         }
-    }
 
-    $('#removeFile').click(function() {
-        gsap.to('#filePreview', {
-            height: 0,
+        // Show file preview with animation
+        const filePreview = $('#filePreview');
+        const uploadZone = $('.border-dashed');
+
+        // Update upload zone to show success state
+        uploadZone.removeClass('border-dashed').addClass('border-success bg-success/10');
+        uploadZone.find('svg').removeClass('text-base-content').addClass('text-success');
+        uploadZone.find('p').first().html(
+            `<span class="font-semibold text-success">File uploaded:</span> ${file.name}`
+        );
+        uploadZone.find('p').last().html(
+            `<span class="text-success">${(file.size / 1024).toFixed(1)} KB</span>`
+        );
+
+        // Show the file preview alert
+        gsap.to(filePreview, {
+            height: 'auto',
+            opacity: 1,
             duration: 0.3,
-            autoAlpha: 0,
+            display: 'flex',
             onComplete: () => {
-                $('#fileInput').val('');
-                $('#fileName').text('');
-                $('#sentiment_input').attr('disabled', false);
+                $('#fileName').text(file.name);
+                $('#sentiment_input').attr('disabled', true);
             }
         });
+
+        // Show success toast
+        Swal.fire({
+            icon: 'success',
+            title: 'File Uploaded!',
+            text: `${file.name} has been successfully uploaded.`,
+            timer: 2000,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1f2937' : '#ffffff',
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#ffffff' : '#000000'
+        });
+    }
+}
+
+$('#removeFile').click(function() {
+    const filePreview = $('#filePreview');
+    const uploadZone = $('.border-dashed');
+    
+    // Reset upload zone
+    uploadZone.addClass('border-dashed')
+        .removeClass('border-success bg-success/10');
+    uploadZone.find('svg').addClass('text-base-content').removeClass('text-success');
+    uploadZone.find('p').first().html(`
+        <span class="font-semibold">Click to upload</span> or drag and drop
+    `);
+    uploadZone.find('p').last().html(`
+        <span class="opacity-60">.txt, .docx, .pdf up to 10MB</span>
+    `);
+
+    // Hide file preview
+    gsap.to(filePreview, {
+        height: 0,
+        opacity: 0,
+        duration: 0.3,
+        display: 'none',
+        onComplete: () => {
+            $('#fileInput').val('');
+            $('#fileName').text('');
+            $('#sentiment_input').attr('disabled', false);
+        }
     });
+});
 
     // Form submission
     $('#analyzeForm').on('submit', function(e) {
@@ -339,6 +385,7 @@ $(document).ready(function() {
                 // Update charts with animations
                 updateCharts(response);
 
+
                 // Success notification
                 Toast.fire({
                     icon: 'success',
@@ -366,6 +413,36 @@ $(document).ready(function() {
             }
         });
     });
+
+        function updateQuickStats(stats) {
+        // Update Today's Analysis count with animation
+        gsap.to('.stat-value.text-primary', {
+            innerText: stats.count,
+            duration: 1,
+            snap: { innerText: 1 }
+        });
+
+        // Update Positive Rate with animation
+        gsap.to('.stat-value.text-success', {
+            innerText: stats.positive_rate,
+            duration: 1,
+            snap: { innerText: 1 },
+            suffix: '%'
+        });
+
+        // Optional: Add a highlight effect
+        const statBoxes = document.querySelectorAll('.stat');
+        statBoxes.forEach(box => {
+            gsap.fromTo(box,
+                { backgroundColor: 'rgba(var(--primary), 0.1)' },
+                { 
+                    backgroundColor: 'transparent',
+                    duration: 1,
+                    ease: 'power2.out'
+                }
+            );
+        });
+    }
 
     function updateOverview(response) {
         // Animate sentiment result
@@ -429,13 +506,16 @@ $(document).ready(function() {
     }
 
     function updateHighlightedText(response) {
-        const container = $('#highlightedText');
-        const words = response.sentiment_input.split(/\b/);
-        container.empty();
-        
-        words.forEach((word, index) => {
+    const container = $('#highlightedText');
+    // Change from split(/\b/) to split(/\s+/) to properly handle word boundaries
+    const words = response.sentiment_input.split(/\s+/);
+    container.empty();
+    
+    words.forEach((word, index) => {
+        // Only create span for non-empty words
+        if (word.trim()) {
             const span = $('<span>').text(word);
-            const cleanWord = word.trim().toLowerCase();
+            const cleanWord = word.toLowerCase();
             
             if (response.positive_matches.includes(cleanWord)) {
                 span.addClass('text-success bg-success/10 px-1 rounded');
@@ -451,8 +531,13 @@ $(document).ready(function() {
             });
             
             container.append(span);
-        });
-    }
+        }
+        
+        if (index < words.length - 1) {
+            container.append(document.createTextNode(' '));
+        }
+    });
+}
 
     function updateCharts(response) {
         const total = response.positive_count + response.negative_count + 1;

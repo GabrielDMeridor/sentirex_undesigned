@@ -1,54 +1,57 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ["class", '[data-theme="dark"]'],
   content: [
-    "./resources/**/*.blade.php",
-    "./resources/**/*.js",
-    "./resources/**/*.vue",
+    './resources/**/*.blade.php',
+    './resources/**/*.js',
+    './resources/**/*.vue',
   ],
   theme: {
     extend: {
       colors: {
-        primary: '#6D28D9',
-        success: '#10B981',
-        error: '#EF4444',
-        warning: '#F59E0B',
-        info: '#3B82F6',
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      borderColor: {
+        DEFAULT: "hsl(var(--border))",
       },
     },
   },
   plugins: [require("daisyui")],
-  daisyui: {
-    themes: [
-      {
-        light: {
-          "primary": "#6D28D9",
-          "primary-content": "#ffffff",
-          "secondary": "#5B21B6",
-          "accent": "#4C1D95",
-          "neutral": "#2A2E37",
-          "base-100": "#FFFFFF",
-          "base-200": "#F2F2F2",
-          "base-300": "#E5E6E6",
-          "success": "#10B981",
-          "warning": "#F59E0B",
-          "error": "#EF4444",
-          "info": "#3B82F6",
-        },
-        dark: {
-          "primary": "#6D28D9",
-          "primary-content": "#ffffff",
-          "secondary": "#5B21B6",
-          "accent": "#4C1D95",
-          "neutral": "#1F2937",
-          "base-100": "#1E1E1E",
-          "base-200": "#2D2D2D",
-          "base-300": "#1F1F1F",
-          "success": "#10B981",
-          "warning": "#F59E0B",
-          "error": "#EF4444",
-          "info": "#3B82F6",
-        },
-      },
-    ],
-    darkTheme: "dark",
-  },
 }
