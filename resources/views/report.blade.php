@@ -247,7 +247,7 @@
         <!-- Footer -->
         <div class="footer">
             <p>© {{ date('Y') }} Sentirex. All rights reserved.</p>
-            <p style="margin-top: 0.5rem">Powered by AI-driven sentiment analysis</p>
+
         </div>
     </div>
 </body>

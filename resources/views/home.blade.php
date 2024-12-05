@@ -9,7 +9,7 @@
     <div class="bg-gradient-to-r from-base-200 via-base-200/50 to-transparent rounded-2xl p-8">
         <div class="max-w-2xl">
             <h1 class="text-4xl font-bold mb-4">Welcome to Sentirex</h1>
-            <p class="text-lg opacity-90 mb-6">Experience powerful sentiment analysis powered by advanced AI to understand emotions in text.</p>
+            <p class="text-lg opacity-90 mb-6">Experience powerful sentiment analysis powered by lexicons to understand sentiments and emotions in text.</p>
             <div class="flex gap-4 flex-wrap">
                 <a href="{{ route('analyze') }}" class="btn btn-primary">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,7 +151,7 @@
                     </div>
                 </div>
                 <h3 class="font-bold text-center mb-2">Real-time Analysis</h3>
-                <p class="text-center opacity-70">Get instant sentiment analysis results with our advanced AI model.</p>
+                <p class="text-center opacity-70">Get instant sentiment analysis results with our advanced Web Application</p>
             </div>
         </div>
 
