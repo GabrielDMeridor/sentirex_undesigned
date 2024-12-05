@@ -44,21 +44,6 @@
                     </label>
                 </div>
 
-                <!-- API Settings -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text text-lg font-medium">API Key</span>
-                    </label>
-                    <div class="relative">
-                        <input type="password" value="{{ config('services.api.key', '************************') }}" 
-                               class="input input-bordered w-full" readonly />
-                        <button type="button" class="btn btn-ghost btn-sm absolute right-2 top-1/2 -translate-y-1/2"
-                                onclick="navigator.clipboard.writeText('{{ config('services.api.key') }}')">
-                            Copy
-                        </button>
-                    </div>
-                </div>
-
                 <div class="divider"></div>
 
                 <!-- Save Button -->
