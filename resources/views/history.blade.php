@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
+@section('title', 'History')
+@section('header', 'Analysis History')
+
 @section('content')
 <div class="p-6">
+    <!-- Your existing table code -->
     <div class="overflow-x-auto">
         <table class="table w-full">
             <thead>
@@ -35,7 +39,7 @@
                     <td>{{ $sentiment->created_at->diffForHumans() }}</td>
                     <td>
                         <div class="flex gap-2">
-                            <button onclick="showReport({{ $sentiment->id }})" class="btn btn-ghost btn-sm">
+                            <button class="btn btn-ghost btn-sm" onclick="showReport('{{ $sentiment->id }}')">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -59,45 +63,115 @@
 
 <!-- Report Modal -->
 <dialog id="reportModal" class="modal">
-    <div class="modal-box max-w-4xl">
-        <h3 class="font-bold text-lg mb-4">Sentiment Analysis Report</h3>
-        <div id="reportContent"></div>
-        <div class="modal-action">
-            <button onclick="downloadReport()" class="btn btn-primary">Download PDF</button>
-            <form method="dialog">
-                <button class="btn">Close</button>
-            </form>
+    <div class="modal-box max-w-4xl bg-base-200">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-lg">Sentiment Analysis Report</h3>
+            <button onclick="closeReportModal()" class="btn btn-ghost btn-sm btn-circle">×</button>
+        </div>
+        
+        <div id="reportContent" class="min-h-[200px] max-h-[600px] overflow-y-auto">
+            <!-- Report content will be loaded here -->
+        </div>
+        
+        <div class="modal-action mt-6">
+            <button onclick="downloadReport()" class="btn btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download PDF
+            </button>
+            <button class="btn" onclick="closeReportModal()">Close</button>
         </div>
     </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="closeReportModal()">close</button>
+    </form>
 </dialog>
 
 @push('scripts')
 <script>
-let currentReportId = null;
-
-function showReport(id) {
-    currentReportId = id;
-    const modal = document.getElementById('reportModal');
-    const reportContent = document.getElementById('reportContent');
+    let currentReportId = null;
     
-    reportContent.innerHTML = '<div class="flex justify-center p-4"><span class="loading loading-spinner loading-lg"></span></div>';
-    modal.showModal();
-
-    fetch(`/report/${id}`)
-        .then(response => response.text())
+    function showReport(id) {
+        currentReportId = id;
+        const modal = document.getElementById('reportModal');
+        const reportContent = document.getElementById('reportContent');
+    
+        // Show loading state
+        reportContent.innerHTML = `
+            <div class="flex justify-center items-center p-8">
+                <span class="loading loading-spinner loading-lg"></span>
+            </div>
+        `;
+    
+        // Show modal
+        modal.showModal();
+    
+        // Fetch report content with proper headers
+        fetch(`/report/${id}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'text/html',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load report');
+            return response.text();
+        })
         .then(html => {
             reportContent.innerHTML = html;
+            
+            // Re-initialize any components/scripts if needed
+            if (typeof initializeReportComponents === 'function') {
+                initializeReportComponents();
+            }
         })
         .catch(error => {
-            reportContent.innerHTML = '<div class="alert alert-error">Failed to load report</div>';
+            console.error('Error:', error);
+            reportContent.innerHTML = `
+                <div class="alert alert-error flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Failed to load report: ${error.message}</span>
+                </div>
+            `;
         });
-}
-
-function downloadReport() {
-    if (currentReportId) {
+    }
+    
+    function downloadReport() {
+        if (!currentReportId) return;
         window.location.href = `/report/${currentReportId}/download`;
     }
-}
-</script>
+    
+    function closeReportModal() {
+        const modal = document.getElementById('reportModal');
+        if (modal) {
+            modal.close();
+            currentReportId = null;
+        }
+    }
+    
+    // Initialize when document is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('reportModal');
+        
+        // Close modal when clicking outside
+        modal?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReportModal();
+            }
+        });
+    
+        // Close modal when pressing Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal) {
+                closeReportModal();
+            }
+        });
+    });
+    </script>
 @endpush
 @endsection

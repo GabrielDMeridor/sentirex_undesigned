@@ -81,7 +81,7 @@ class SentimentController extends Controller
             $textFeatures = $this->analyzeTextFeatures($text);
             $sentimentEmotion = $this->adjustEmotion($sentimentResult, $sentimentEmotion, $textFeatures);
             
-            $this->saveSentimentToDatabase($text, $sentimentResult, $sentimentEmotion, $textFeatures);
+            $sentiment = $this->saveSentimentToDatabase($text, $sentimentResult, $sentimentEmotion, $textFeatures);
 
             return response()->json([
                 'sentiment_input' => $text,
@@ -204,18 +204,6 @@ class SentimentController extends Controller
         return $emotion;
     }
 
-    private function saveSentimentToDatabase($text, $result, $emotion, $features)
-    {
-        return Sentiment::create([
-            'sentiment_input' => $text,
-            'sentiment_result' => $result,
-            'sentiment_emotion' => $emotion,
-            'text_features' => implode('; ', $features),
-            'sentiment_date' => now(),
-        ]);
-    }
-
-    // Rest of your existing methods remain unchanged
     private function analyzeTextFeatures($text)
     {
         $features = [];
@@ -249,29 +237,66 @@ class SentimentController extends Controller
         return $features;
     }
 
+    private function saveSentimentToDatabase($text, $result, $emotion, $features)
+    {
+        return Sentiment::create([
+            'sentiment_input' => $text,
+            'sentiment_result' => $result,
+            'sentiment_emotion' => $emotion,
+            'text_features' => implode('; ', $features),
+            'sentiment_date' => now(),
+        ]);
+    }
+
     public function history()
     {
         $sentiments = Sentiment::whereNull('deleted_at')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function($sentiment) {
+                $features = collect(explode(';', $sentiment->text_features))
+                    ->map(fn($feature) => trim($feature))
+                    ->filter()
+                    ->take(3)
+                    ->implode('; ');
+                
+                $sentiment->formatted_features = $features;
+                return $sentiment;
+            });
+
         return view('history', compact('sentiments'));
     }
 
     public function softDelete($id)
     {
-        $sentiment = Sentiment::findOrFail($id);
-        $sentiment->delete();
+        try {
+            $sentiment = Sentiment::findOrFail($id);
+            $sentiment->delete();
 
-        return response()->json([
-            'message' => 'Sentiment deleted successfully.',
-            'id' => $id,
-        ]);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Analysis deleted successfully.',
+                    'id' => $id
+                ]);
+            }
+
+            return back()->with('success', 'Analysis deleted successfully.');
+        } catch (\Exception $e) {
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete analysis.'
+                ], 500);
+            }
+
+            return back()->with('error', 'Failed to delete analysis.');
+        }
     }
 
     public function generateReport($id)
 {
-    if (request()->wantsJson()) {
-        // For AJAX request, return just the report content
+    try {
         $sentiment = Sentiment::findOrFail($id);
         $analyzer = new Analyzer();
         $sentimentScores = $analyzer->getSentiment($sentiment->sentiment_input);
@@ -288,73 +313,140 @@ class SentimentController extends Controller
             ]
         ];
 
-        return view('report', $data)->render();
+        // Return view for both AJAX and direct requests
+        $view = view('report', $data)->render();
+        
+        if (request()->ajax()) {
+            return response($view);
+        }
+
+        return $view;
+    } catch (\Exception $e) {
+        \Log::error('Report generation error: ' . $e->getMessage());
+        
+        if (request()->ajax()) {
+            return response()->json([
+                'error' => 'Failed to generate report'
+            ], 500);
+        }
+        
+        throw $e;
     }
 }
 
-public function downloadReport($id)
-{
-    $sentiment = Sentiment::findOrFail($id);
-    $analyzer = new Analyzer();
-    $sentimentScores = $analyzer->getSentiment($sentiment->sentiment_input);
-    
-    $total = array_sum($sentimentScores) ?: 1;
-    $data = [
-        'title' => 'Sentiment Analysis Report',
-        'sentiment' => $sentiment,
-        'date' => now(),
-        'scores' => [
-            'positive' => round(($sentimentScores['pos'] / $total) * 100, 1),
-            'negative' => round(($sentimentScores['neg'] / $total) * 100, 1),
-            'neutral' => round(100 - (($sentimentScores['pos'] + $sentimentScores['neg']) / $total) * 100, 1)
-        ]
-    ];
+    public function downloadReport($id)
+    {
+        $sentiment = Sentiment::findOrFail($id);
+        $analyzer = new Analyzer();
+        $sentimentScores = $analyzer->getSentiment($sentiment->sentiment_input);
+        
+        $total = array_sum($sentimentScores) ?: 1;
+        $data = [
+            'title' => 'Sentiment Analysis Report',
+            'sentiment' => $sentiment,
+            'date' => now(),
+            'result' => $sentiment->sentiment_result,
+            'emotion' => $sentiment->sentiment_emotion,
+            'input' => $sentiment->sentiment_input,
+            'text_features' => $sentiment->text_features,
+            'scores' => [
+                'positive' => round(($sentimentScores['pos'] / $total) * 100, 1),
+                'negative' => round(($sentimentScores['neg'] / $total) * 100, 1),
+                'neutral' => round(100 - (($sentimentScores['pos'] + $sentimentScores['neg']) / $total) * 100, 1)
+            ],
+            'sentiment_scores' => [
+                'positive' => round(($sentimentScores['pos'] / $total) * 100, 1),
+                'negative' => round(($sentimentScores['neg'] / $total) * 100, 1),
+                'neutral' => round(100 - (($sentimentScores['pos'] + $sentimentScores['neg']) / $total) * 100, 1)
+            ]
+        ];
 
-    $pdf = PDF::loadView('report', $data);
-    return $pdf->download('sentiment_report.pdf');
-}
+        $pdf = PDF::loadView('report', $data);
+        return $pdf->download('sentiment_report_' . $sentiment->id . '.pdf');
+    }
 
     public function export(Request $request)
-{
-    $ids = json_decode($request->ids);
-    $format = $request->format;
-    $sentiments = Sentiment::findMany($ids);
-    
-    switch($format) {
-        case 'pdf':
-            $pdf = PDF::loadView('report', [
-                'title' => 'Batch Sentiment Analysis',
-                'sentiments' => $sentiments,
-                'date' => now()
-            ]);
-            return $pdf->download('sentiment_analysis.pdf');
-            
-        case 'csv':
-            return response()->streamDownload(function() use ($sentiments) {
-                $file = fopen('php://output', 'w');
-                fputcsv($file, ['Input', 'Result', 'Emotion', 'Features', 'Date']);
-                foreach($sentiments as $sentiment) {
-                    fputcsv($file, [
-                        $sentiment->sentiment_input,
-                        $sentiment->sentiment_result,
-                        $sentiment->sentiment_emotion,
-                        $sentiment->text_features,
-                        $sentiment->created_at
-                    ]);
-                }
-                fclose($file);
-            }, 'sentiment_analysis.csv');
-            
-        default:
-            return response()->json(['error' => 'Unsupported format'], 400);
+    {
+        $ids = json_decode($request->ids);
+        $format = $request->format;
+        $sentiments = Sentiment::findMany($ids);
+        
+        switch($format) {
+            case 'pdf':
+                $pdf = PDF::loadView('reports.batch', [
+                    'title' => 'Batch Sentiment Analysis',
+                    'sentiments' => $sentiments,
+                    'date' => now()
+                ]);
+                return $pdf->download('sentiment_analysis.pdf');
+                
+            case 'csv':
+                return response()->streamDownload(function() use ($sentiments) {
+                    $file = fopen('php://output', 'w');
+                    fputcsv($file, ['Input', 'Result', 'Emotion', 'Features', 'Date']);
+                    foreach($sentiments as $sentiment) {
+                        fputcsv($file, [
+                            $sentiment->sentiment_input,
+                            $sentiment->sentiment_result,
+                            $sentiment->sentiment_emotion,
+                            $sentiment->text_features,
+                            $sentiment->created_at
+                        ]);
+                    }
+                    fclose($file);
+                }, 'sentiment_analysis.csv');
+                
+            default:
+                return response()->json(['error' => 'Unsupported format'], 400);
+        }
     }
-}
+
+    public function settings()
+    {
+        return view('settings', [
+            'theme' => session('theme', 'dark'),
+            'language' => session('language', 'en'),
+            'notifications' => session('notifications', true)
+        ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'theme' => 'required|in:light,dark',
+            'language' => 'required|in:en,es,fr',
+            'notifications' => 'boolean'
+        ]);
+
+        session([
+            'theme' => $validated['theme'],
+            'language' => $validated['language'],
+            'notifications' => $request->has('notifications')
+        ]);
+
+        return back()->with('success', 'Settings updated successfully');
+    }
 
     private function generateBatchReport($sentiments)
     {
+        $analyzedData = $sentiments->map(function($sentiment) {
+            $analyzer = new Analyzer();
+            $sentimentScores = $analyzer->getSentiment($sentiment->sentiment_input);
+            $total = array_sum($sentimentScores) ?: 1;
+            
+            return [
+                'sentiment' => $sentiment,
+                'scores' => [
+                    'positive' => round(($sentimentScores['pos'] / $total) * 100, 1),
+                    'negative' => round(($sentimentScores['neg'] / $total) * 100, 1),
+                    'neutral' => round(100 - (($sentimentScores['pos'] + $sentimentScores['neg']) / $total) * 100, 1)
+                ]
+            ];
+        });
+
         $data = [
             'title' => 'Batch Sentiment Analysis Report',
-            'sentiments' => $sentiments,
+            'analyzed_data' => $analyzedData,
             'date' => now()
         ];
 
@@ -371,15 +463,31 @@ public function downloadReport($id)
 
         $callback = function() use ($sentiments) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Input', 'Result', 'Emotion', 'Features', 'Date']);
+            fputcsv($file, [
+                'Input',
+                'Result',
+                'Emotion',
+                'Features',
+                'Date',
+                'Positive Score',
+                'Negative Score',
+                'Neutral Score'
+            ]);
 
             foreach ($sentiments as $sentiment) {
+                $analyzer = new Analyzer();
+                $sentimentScores = $analyzer->getSentiment($sentiment->sentiment_input);
+                $total = array_sum($sentimentScores) ?: 1;
+                
                 fputcsv($file, [
                     $sentiment->sentiment_input,
                     $sentiment->sentiment_result,
                     $sentiment->sentiment_emotion,
                     $sentiment->text_features,
-                    $sentiment->created_at
+                    $sentiment->created_at,
+                    round(($sentimentScores['pos'] / $total) * 100, 1) . '%',
+                    round(($sentimentScores['neg'] / $total) * 100, 1) . '%',
+                    round(100 - (($sentimentScores['pos'] + $sentimentScores['neg']) / $total) * 100, 1) . '%'
                 ]);
             }
             fclose($file);
@@ -387,31 +495,5 @@ public function downloadReport($id)
 
         return response()->stream($callback, 200, $headers);
     }
-
-    public function settings()
-{
-    return view('settings', [
-        'theme' => session('theme', 'dark'),
-        'language' => session('language', 'en'),
-        'notifications' => session('notifications', true)
-    ]);
 }
-
-public function updateSettings(Request $request)
-{
-    $validated = $request->validate([
-        'theme' => 'required|in:light,dark',
-        'language' => 'required|in:en,es,fr',
-        'notifications' => 'boolean'
-    ]);
-
-    session([
-        'theme' => $validated['theme'],
-        'language' => $validated['language'],
-        'notifications' => $request->has('notifications')
-    ]);
-
-    return back()->with('success', 'Settings updated successfully');
-}
-
-}
+        

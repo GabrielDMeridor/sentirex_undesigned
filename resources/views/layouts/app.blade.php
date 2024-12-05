@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset('js/theme.js') }}"></script>
     <script>
         document.documentElement.setAttribute('data-theme', '{{ session("theme", "dark") }}');
     </script>
@@ -108,6 +109,7 @@
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-base-300 to-base-200">
+    @include('components.report-modal')
     <div class="drawer lg:drawer-open">
         <input id="drawer" type="checkbox" class="drawer-toggle" />
         

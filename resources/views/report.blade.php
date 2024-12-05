@@ -4,130 +4,250 @@
     <meta charset="utf-8">
     <title>{{ $title }}</title>
     <style>
+        /* Base Styles */
         body {
-            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+            background-color: #1a1b26;
+            color: #a9b1d6;
             line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text for better contrast */
-            font-size: 16px; /* Comfortable reading size */
         }
+
+        /* Header */
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #4c51bf, #6b46c1); /* Darker gradient */
-            color: #ffffff; /* White text */
-            border-radius: 10px;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #7928ca, #ff0080);
+            color: white;
         }
+
         .header h1 {
-            font-size: 2.5em;
             margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
         }
+
         .header p {
-            font-size: 1em;
+            margin: 0.5rem 0 0;
+            opacity: 0.9;
         }
+
+        /* Content Sections */
         .content {
-            padding: 20px;
-            border: 1px solid #2d3748; /* Subtle border */
-            border-radius: 10px;
-            margin: 20px 0;
-            background: #2d3748; /* Dark card background */
-            color: #e2e8f0; /* Ensure light text */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Subtle shadow */
+            padding: 1.5rem;
         }
+
         .section {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #4a5568; /* Subtle section divider */
+            background: #1f2335;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #2d2e3b;
         }
-        .label {
-            font-weight: bold;
-            color: #a0aec0; /* Muted light text */
-            font-size: 1.1em;
+
+        .section-title {
+            color: #7aa2f7;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #2d2e3b;
         }
-        .value {
-            margin-left: 10px;
-            color: #edf2f7; /* Lighter text for values */
-            font-size: 1em;
+
+        /* Analysis Overview */
+        .percentage-bar {
+            margin: 1.5rem 0;
         }
-        .stats {
+
+        .bar-label {
             display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            padding: 20px;
-            background: #1a202c; /* Match body background */
-            border-radius: 10px;
-            border: 1px solid #2d3748; /* Subtle border */
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
         }
-        .stat-item {
+
+        .bar-container {
+            width: 100%;
+            height: 1.25rem;
+            background: #24283b;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .bar {
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 0.5rem;
+        }
+
+        .bar.positive { background: #9ece6a; }
+        .bar.neutral { background: #7aa2f7; }
+        .bar.negative { background: #f7768e; }
+
+        .percentage {
+            font-weight: 600;
+        }
+
+        /* Result & Emotion */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-box {
+            background: #24283b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #2d2e3b;
+        }
+
+        .result-label {
+            font-size: 0.875rem;
+            color: #7aa2f7;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .badge.positive { background: rgba(158, 206, 106, 0.2); color: #9ece6a; }
+        .badge.negative { background: rgba(247, 118, 142, 0.2); color: #f7768e; }
+        .badge.neutral { background: rgba(122, 162, 247, 0.2); color: #7aa2f7; }
+
+        /* Analyzed Text */
+        .text-box {
+            background: #24283b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #2d2e3b;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            margin-top: 1rem;
+        }
+
+        /* Features List */
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+
+        .features-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #2d2e3b;
+            font-size: 0.875rem;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Footer */
+        .footer {
             text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .stat-label {
-            font-size: 14px;
-            color: #a0aec0;
-        }
-        .positive { color: #48bb78; } /* Green for positive */
-        .neutral { color: #ecc94b; } /* Yellow for neutral */
-        .negative { color: #f56565; } /* Red for negative */
-        a, a:visited {
-            color: #90cdf4; /* Light blue for links */
-            text-decoration: none;
-        }
-        a:hover {
-            color: #63b3ed; /* Brighter blue on hover */
-            text-decoration: underline;
-        }
-        @page {
-            margin: 0cm 0cm;
+            color: #565f89;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid #2d2e3b;
         }
     </style>
 </head>
 <body>
+    <!-- Header Section -->
     <div class="header">
-        <h1>{{ $title }}</h1>
-        <p>Generated on {{ $date->format('F j, Y \a\t h:i A') }}</p>
+        <h1>Sentirex</h1>
+        <p>Generated on {{ Carbon\Carbon::parse($date)->timezone('Asia/Manila')->format('F j, Y \a\t h:i A') }}</p>
     </div>
 
     <div class="content">
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value positive">{{ $scores['positive'] }}%</div>
-                <div class="stat-label">Positive</div>
+        <!-- Analysis Overview Section -->
+        <div class="section">
+            <h2 class="section-title">Analysis Overview</h2>
+            
+            <div class="percentage-bar">
+                <div class="bar-label">
+                    <span>Positive</span>
+                    <span class="percentage" style="color: #9ece6a">{{ number_format($scores['positive'], 1) }}%</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar positive" style="width: {{ $scores['positive'] }}%"></div>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value neutral">{{ $scores['neutral'] }}%</div>
-                <div class="stat-label">Neutral</div>
+
+            <div class="percentage-bar">
+                <div class="bar-label">
+                    <span>Neutral</span>
+                    <span class="percentage" style="color: #7aa2f7">{{ number_format($scores['neutral'], 1) }}%</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar neutral" style="width: {{ $scores['neutral'] }}%"></div>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value negative">{{ $scores['negative'] }}%</div>
-                <div class="stat-label">Negative</div>
+
+            <div class="percentage-bar">
+                <div class="bar-label">
+                    <span>Negative</span>
+                    <span class="percentage" style="color: #f7768e">{{ number_format($scores['negative'], 1) }}%</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar negative" style="width: {{ $scores['negative'] }}%"></div>
+                </div>
             </div>
         </div>
 
+        <!-- Result & Emotion Section -->
         <div class="section">
-            <span class="label">Input Text:</span>
-            <p class="value">{{ $sentiment->sentiment_input }}</p>
+            <h2 class="section-title">Result & Emotion</h2>
+            <div class="result-grid">
+                <div class="result-box">
+                    <div class="result-label">Overall Sentiment</div>
+                    <div class="badge {{ strtolower($sentiment->sentiment_result) }}">
+                        {{ $sentiment->sentiment_result }}
+                    </div>
+                </div>
+                <div class="result-box">
+                    <div class="result-label">Detected Emotion</div>
+                    <div class="badge neutral">
+                        {{ $sentiment->sentiment_emotion }}
+                        <span style="margin-left: 0.5rem">
+                            {{ $sentiment->sentiment_emotion === 'Happy' ? '😊' : ($sentiment->sentiment_emotion === 'Sad' ? '😢' : '😐') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <!-- Analyzed Text Section -->
         <div class="section">
-            <span class="label">Sentiment Result:</span>
-            <span class="value">{{ $sentiment->sentiment_result }}</span>
+            <h2 class="section-title">Analyzed Text</h2>
+            <div class="text-box">
+                {{ $sentiment->sentiment_input }}
+            </div>
         </div>
 
+        <!-- Text Features Section -->
         <div class="section">
-            <span class="label">Emotion:</span>
-            <span class="value">{{ $sentiment->sentiment_emotion }}</span>
+            <h2 class="section-title">Text Features</h2>
+            <ul class="features-list">
+                @foreach(explode(';', $sentiment->text_features) as $feature)
+                    <li>{{ trim($feature) }}</li>
+                @endforeach
+            </ul>
         </div>
 
-        <div class="section">
-            <span class="label">Text Features:</span>
-            <p class="value">{{ $sentiment->text_features }}</p>
+        <!-- Footer -->
+        <div class="footer">
+            <p>© {{ date('Y') }} Sentirex. All rights reserved.</p>
+            <p style="margin-top: 0.5rem">Powered by AI-driven sentiment analysis</p>
         </div>
     </div>
 </body>
