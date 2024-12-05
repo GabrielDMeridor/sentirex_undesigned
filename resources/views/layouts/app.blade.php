@@ -184,10 +184,13 @@
             <div class="menu min-h-screen w-80 bg-base-200/50 backdrop-blur-lg text-base-content border-r border-base-300">
                 <div class="p-4">
                     <div class="flex items-center gap-4 p-4 mb-6">
-                        <div class="avatar placeholder">
-                            <div class="bg-gradient-to-br from-primary to-secondary text-white rounded-xl w-12 float">
-                                <span class="text-xl">S</span>
-                            </div>
+                        <!-- Replace avatar placeholder with logo image -->
+                        <div class="w-12 h-12">
+                            <img 
+                                src="{{ asset('images/sentirex.png') }}" 
+                                alt="Sentirex Logo"
+                                class="w-full h-full object-contain rounded-xl float"
+                            />
                         </div>
                         <div>
                             <h2 class="text-xl font-bold gradient-text">Sentirex</h2>
